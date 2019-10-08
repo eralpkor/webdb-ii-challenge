@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const knex = require('knex');
-
+const validation = require('../middleware/middleware.js');
 const knexConfig = require('../knexfile.js');
 
 const db = knex(knexConfig.development);
@@ -34,7 +34,7 @@ router.get('/:id', (req, res) => {
 });
 
 // PUT /api/cars/:id update a car with id;
-router.get('/:id', (req, res) => {
+router.put('/:id', (req, res) => {
   const { id } = req.params;
   db('cars')
     .where({ id: id })
@@ -49,5 +49,32 @@ router.get('/:id', (req, res) => {
 });
 
 // PODT /api/cars create a car...
+router.post('/', validation, (req, res) => {
+  db('cars')
+    .insert(req.body, 'id')
+    .then(ids => {
+      console.log(ids)
+      res.status(201).json({ carAdded: ids[0] });
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ message: 'Error creating...'});
+    });
+});
+
+// DELETE /api/cars/:id delete a car
+router.delete('/:id', (req, res) => {
+  const { id } = req.params;
+  db('cars')
+    .where({ id: id })
+    .del()
+    .then(count => {
+      count ? res.status(200).json({ message: `Car with id: ${id} deleted`}) : res.status(404).json({ message: `That is an invalid id: ${id}`});
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ message: `Error deleting car with ID: ${id} `});
+    });
+});
 
 module.exports = router;
